@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PhishDefender 🔒</title>
+  <style>
+    * { box-sizing: border-box; font-family: "Poppins", sans-serif; }
+    body {
+      background: linear-gradient(135deg, #001f3f, #0074d9);
+      color: #fff; min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 20px;
+    }
+    h1 { font-size: 2.8em; margin-bottom: 10px; }
+    p { font-size: 1.1em; opacity: 0.8; margin-bottom: 20px; }
+    input {
+      padding: 12px; width: 80%; max-width: 400px;
+      border: none; border-radius: 10px; margin: 10px; font-size: 1em;
+    }
+    button {
+      padding: 12px 25px; border: none; border-radius: 10px;
+      background: #ff4136; color: white; font-size: 1.1em;
+      cursor: pointer; transition: background 0.3s;
+    }
+    button:hover { background: #ff6347; }
+    .result-card {
+      margin-top: 30px; background: rgba(255, 255, 255, 0.15);
+      padding: 25px; border-radius: 15px;
+      width: 90%; max-width: 500px; text-align: left;
+      transition: transform 0.3s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+    .result-card.safe { border-left: 8px solid #2ecc40; }
+    .result-card.phishing { border-left: 8px solid #ff4136; }
+    .score { font-size: 1.2em; margin-bottom: 5px; }
+    .label { font-weight: bold; font-size: 1.4em; margin-bottom: 10px; }
+    ul { list-style: none; padding: 0; }
+    li::before { content: "• "; color: #ffdc00; }
+    footer { margin-top: 40px; opacity: 0.7; font-size: 0.9em; }
+  </style>
+</head>
+<body>
+  <h1>🔒 PhishDefender</h1>
+  <p>Enter any URL to check for phishing risk in real time.</p>
+
+  <input type="text" id="urlInput" placeholder="https://example-login.com" />
+  <button onclick="checkUrl()">Scan</button>
+
+  <div id="result"></div>
+
+  <footer>Made with ❤️ for the Google Cloud Hackathon</footer>
+
+  <script>
+    async function checkUrl() {
+      const url = document.getElementById("urlInput").value.trim();
+      const resultBox = document.getElementById("result");
+      if (!url) {
+        resultBox.innerHTML = "<p>Please enter a URL first.</p>";
+        return;
+      }
+      resultBox.innerHTML = "<p>🔍 Scanning...</p>";
+      try {
+        const response = await fetch("/scan/url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url }),
+        });
+        const data = await response.json();
+        const colorClass = data.label === "phishing" ? "phishing" : "safe";
+        const colorLabel = data.label === "phishing" ? "⚠️ Phishing Detected" : "✅ Safe Website";
+        let reasonsList = "<ul>";
+        data.reasons.forEach((r) => { reasonsList += `<li>${r}</li>`; });
+        reasonsList += "</ul>";
+        resultBox.innerHTML = `
+          <div class="result-card ${colorClass}">
+            <div class="label">${colorLabel}</div>
+            <div class="score">🔢 Score: <b>${data.score}</b></div>
+            <div><b>Domain:</b> ${data.domain}</div>
+            <div style="margin-top:10px;"><b>Reasons:</b>${reasonsList}</div>
+          </div>
+        `;
+      } catch (err) {
+        resultBox.innerHTML = "<p>❌ Error analyzing URL.</p>";
+      }
+    }
+  </script>
+</body>
+</html>
